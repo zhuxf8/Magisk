@@ -13,6 +13,51 @@
 
 using namespace std;
 
+bool byte_view::contains(byte_view pattern) const {
+    return _buf != nullptr && memmem(_buf, _sz, pattern._buf, pattern._sz) != nullptr;
+}
+
+bool byte_view::equals(byte_view o) const {
+    return _sz == o._sz && memcmp(_buf, o._buf, _sz) == 0;
+}
+
+heap_data byte_view::clone() const {
+    heap_data copy(_sz);
+    memcpy(copy._buf, _buf, _sz);
+    return copy;
+}
+
+void byte_data::swap(byte_data &o) {
+    std::swap(_buf, o._buf);
+    std::swap(_sz, o._sz);
+}
+
+rust::Vec<size_t> byte_data::patch(byte_view from, byte_view to) {
+    rust::Vec<size_t> v;
+    if (_buf == nullptr)
+        return v;
+    auto p = _buf;
+    auto eof = _buf + _sz;
+    while (p < eof) {
+        p = static_cast<uint8_t *>(memmem(p, eof - p, from.buf(), from.sz()));
+        if (p == nullptr)
+            return v;
+        memset(p, 0, from.sz());
+        memcpy(p, to.buf(), to.sz());
+        v.push_back(p - _buf);
+        p += from.sz();
+    }
+    return v;
+}
+
+rust::Vec<size_t> mut_u8_patch(
+        rust::Slice<uint8_t> buf,
+        rust::Slice<const uint8_t> from,
+        rust::Slice<const uint8_t> to) {
+    byte_data data(buf);
+    return data.patch(from, to);
+}
+
 int fork_dont_care() {
     if (int pid = xfork()) {
         waitpid(pid, nullptr, 0);
@@ -31,38 +76,6 @@ int fork_no_orphan() {
     if (getppid() == 1)
         exit(1);
     return 0;
-}
-
-mt19937_64 &get_rand(const void *seed_buf) {
-    static mt19937_64 gen([&] {
-        mt19937_64::result_type seed;
-        if (seed_buf == nullptr) {
-            int fd = xopen("/dev/urandom", O_RDONLY | O_CLOEXEC);
-            xxread(fd, &seed, sizeof(seed));
-            close(fd);
-        } else {
-            memcpy(&seed, seed_buf, sizeof(seed));
-        }
-        return seed;
-    }());
-    return gen;
-}
-
-int gen_rand_str(char *buf, int len, bool varlen) {
-    auto gen = get_rand();
-
-    if (len == 0)
-        return 0;
-    if (varlen) {
-        std::uniform_int_distribution<int> len_dist(len / 2, len);
-        len = len_dist(gen);
-    }
-    std::uniform_int_distribution<int> alphabet('a', 'z');
-    for (int i = 0; i < len - 1; ++i) {
-        buf[i] = static_cast<char>(alphabet(gen));
-    }
-    buf[len - 1] = '\0';
-    return len - 1;
 }
 
 int exec_command(exec_t &exec) {
@@ -195,16 +208,22 @@ uint32_t binary_gcd(uint32_t u, uint32_t v) {
 }
 
 int switch_mnt_ns(int pid) {
-    char mnt[32];
-    ssprintf(mnt, sizeof(mnt), "/proc/%d/ns/mnt", pid);
-    if (access(mnt, R_OK) == -1) return 1; // Maybe process died..
+    int ret = -1;
+    int fd = syscall(__NR_pidfd_open, pid, 0);
+    if (fd > 0) {
+        ret = setns(fd, CLONE_NEWNS);
+        close(fd);
+    }
+    if (ret < 0) {
+        char mnt[32];
+        ssprintf(mnt, sizeof(mnt), "/proc/%d/ns/mnt", pid);
+        fd = open(mnt, O_RDONLY);
+        if (fd < 0) return 1; // Maybe process died..
 
-    int fd, ret;
-    fd = xopen(mnt, O_RDONLY);
-    if (fd < 0) return 1;
-    // Switch to its namespace
-    ret = xsetns(fd, 0);
-    close(fd);
+        // Switch to its namespace
+        ret = xsetns(fd, 0);
+        close(fd);
+    }
     return ret;
 }
 
@@ -260,4 +279,20 @@ int ssprintf(char *dest, size_t size, const char *fmt, ...) {
 #undef strlcpy
 size_t strscpy(char *dest, const char *src, size_t size) {
     return std::min(strlcpy(dest, src, size), size - 1);
+}
+
+extern "C" void cxx$utf8str$new(rust::Utf8CStr *self, const void *s, size_t len);
+extern "C" const char *cxx$utf8str$ptr(const rust::Utf8CStr *self);
+extern "C" size_t cxx$utf8str$len(const rust::Utf8CStr *self);
+
+rust::Utf8CStr::Utf8CStr(const char *s, size_t len) {
+    cxx$utf8str$new(this, s, len);
+}
+
+const char *rust::Utf8CStr::data() const {
+    return cxx$utf8str$ptr(this);
+}
+
+size_t rust::Utf8CStr::length() const {
+    return cxx$utf8str$len(this);
 }

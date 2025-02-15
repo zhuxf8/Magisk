@@ -11,7 +11,6 @@
 umask 022
 
 OUTFD=$2
-APK="$3"
 COMMONDIR=$INSTALLER/assets
 CHROMEDIR=$INSTALLER/assets/chromeos
 
@@ -56,7 +55,7 @@ BINDIR=$INSTALLER/lib/$ABI
 cd $BINDIR
 for file in lib*.so; do mv "$file" "${file:3:${#file}-6}"; done
 cd /
-cp -af $INSTALLER/lib/$ABI32/libmagisk32.so $BINDIR/magisk32 2>/dev/null
+cp -af $INSTALLER/lib/$ABI32/libmagisk.so $BINDIR/magisk32 2>/dev/null
 
 # Check if system root is installed and remove
 $BOOTMODE || remove_system_su
@@ -68,7 +67,7 @@ $BOOTMODE || remove_system_su
 ui_print "- Constructing environment"
 
 # Copy required files
-rm -rf $MAGISKBIN/* 2>/dev/null
+rm -rf $MAGISKBIN 2>/dev/null
 mkdir -p $MAGISKBIN 2>/dev/null
 cp -af $BINDIR/. $COMMONDIR/. $BBBIN $MAGISKBIN
 

@@ -1,5 +1,104 @@
 # Magisk Changelog
 
+### v28.1
+
+- [App] Fix stub APK download link
+- [App] Fix support for Android lower than 8.0
+- [General] Fix support for MTK Samsung devices
+- [MagiskInit] Fix a regression for 2SI devices
+- [MagiskPolicy] Fix a regression causing `overlay.d` replaced files to be not accessible
+
+### v28.0
+
+- [General] Support 16k page size
+- [General] Add basic support for RISC-V (not built in releases)
+- [General] Use a minimal libc to build static executables (`magiskinit` and `magiskboot`) for smaller sizes
+- [Core] Remove unnecessary mirror for magic mount
+- [Core] Update boot image detection logic to support more devices
+- [MagiskInit] Rewrite 2SI logic for injecting `magiskinit` as `init`
+- [MagiskInit] Update preinit partition detection
+- [Zygisk] Update internal JNI hooking implementation
+- [MagiskPolicy] Preserve sepolicy config flag after patching
+- [MagiskPolicy] Optimize patching rules to reduce the amount of new rules being injected
+- [DenyList] Support enforcing denylist when Zygisk is disabled
+- [Resetprop] Improve implementation to workaround several property modification detections
+- [Resetprop] Update to properly work with property overlays
+- [App] Major internal code refactoring
+- [App] Support patching Samsung firmware with images larger than 8GiB
+- [App] Use user-initiated job instead of foreground services on Android 14
+- [App] Support Android 13+ built-in per-app language preferences
+- [App] Add `action.sh` support to allow modules to define an action triggered from UI
+- [MagiskBoot] Support spliting kernel images without decompression
+- [MagiskBoot] Properly support vendor boot images
+- [MagiskBoot] Disable Samsung PROCA from kernel image
+
+### v27.0
+
+- [Zygisk] Introduce new code injection mechanism
+- [Zygisk] Support new signature introduced in U QPR2
+- [SEPolicy] Update libsepol to properly set some policy config bits
+- [MagiskBoot] Support compressing `init` so Magisk is installable on devices with small boot partitions
+- [ResetProp] Add new wait for property feature `resetprop -w`
+
+### v26.4
+
+- [MagiskBoot] Don't pad zeros if signed boot image is larger
+- [MagiskPolicy] Fix `genfscon` and `filename_trans`
+- [MagiskPolicy] Fix bug in `libsepol`
+- [Zygisk] Fix and simplify file descriptor sanitization logic
+- [App] Prevent OOM when patching AP tarfiles
+- [App] Fix bug in device configuration detection
+- [Daemon] Fix certificate parsing of APKs
+- [General] Fix logging errors from C++ code being ignored
+
+### v26.3
+
+- [General] Fix device information detection script
+- [General] Update BusyBox to 1.36.1
+- [General] Update toolchain that produces broken arm32 executables
+- [App] Fix root service unable to bind on OnePlus devices
+
+### v26.2
+
+- [MagiskBoot] Support extracting boot image from `payload.bin`
+- [MagiskBoot] Support cpio files containing character files
+- [MagiskBoot] Support listing cpio content
+- [MagiskBoot] Directly handle AVB 1.0 signing and verification without going through Java implementation
+- [Daemon] Make daemon socket a fixed path in MAGISKTMP
+- [resetprop] Support printing property context
+- [resetprop] Support only printing persistent properties from storage
+- [resetprop] Properly support setting persistent properties bypassing property_service
+- [MagiskSU] Support `-g` and `-G` options
+- [MagiskSU] Support switching mount namespace to PID with `-t`
+- [MagiskPolicy] Fix patching extended permissions
+- [MagiskPolicy] Support more syntax for extended permissions
+- [MagiskPolicy] Support printing out the loaded sepolicy rules
+- [App] Support patching boot image from ROM zips
+- [App] Properly preserve `boot.img` when patching Samsung firmware with `init_boot.img`
+
+### v26.1
+
+- [App] Fix crashing when revoking root permissions
+- [MagiskInit] Always prefer `ext4` partitions over `f2fs` when selecting the pre-init partition
+- [General] Restore module files' context/owner/group from mirror. This is a regression introduced in v26.0
+
+### v26.0
+
+- [General] Bump minimum supported Android version to Android 6.0
+- [General] New magic mount backend. It supports loading modules into system with `overlayfs` files injected
+- [Zygisk] Release new API version 4
+- [Zygisk] Prevent crashing daemon in error
+- [Zygisk] Rewrite zygote code injection with new loader library approach
+- [Zygisk] Rewrite code unloading implementation
+- [MagiskBoot] Support amonet microloader devices
+- [MagiskBoot] Always use lz4_legacy compression on v4 boot images. This fixes boot image patching issues on Android U preview.
+- [MagiskInit] Support replacing existing \*.rc files in `overlay.d`
+- [MagiskInit] Rewrite sepolicy.rules mounting and loading implementation
+- [App] Make stub patching 100% offline
+- [App] Support patching `init_boot.img` for Samsung ODIN firmware
+- [MagiskPolicy] Fix minor bug in command line argument parsing
+- [MagiskPolicy] Update rules to support Android U
+
 ### v25.2
 
 - [MagiskInit] Fix a potential issue when stub cpio is used
